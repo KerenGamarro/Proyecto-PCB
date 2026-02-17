@@ -1,0 +1,120 @@
+/*
+  Prototipo - Cámara Ambiental Inteligente
+  Módulo: Sensores
+  Microcontrolador: ESP32
+  Sensores:
+    - BME280 (Temperatura, Humedad, Presión)
+    - BH1750 (Iluminación)
+    - AHT10 (Temperatura y Humedad)
+  Version 1 
+*/
+
+#include <Wire.h>
+#include <Adafruit_BME280.h>
+#include <BH1750.h>
+#include <Adafruit_AHTX0.h>
+
+// =====================
+// Sensores
+// =====================
+Adafruit_BME280 bme;
+BH1750 lightMeter;
+Adafruit_AHTX0 aht;
+
+// Pin del potenciómetro
+#define POT_PIN 34
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  Serial.println("Inicializando sensores...");
+
+  // Inicializar I2C
+  Wire.begin(21, 22);
+
+  // Inicializar BME280
+  if (!bme.begin(0x76)) {   // 0x76 o 0x77
+    Serial.println("Error: BME280 no encontrado");
+  } else {
+    Serial.println("BME280 inicializado correctamente");
+  }
+
+  // Inicializar BH1750
+  if (lightMeter.begin()) {
+    Serial.println("BH1750 inicializado correctamente");
+  } else {
+    Serial.println("Error: BH1750 no encontrado");
+  }
+
+  // Inicializar AHT10
+  if (!aht.begin()) {
+    Serial.println("Error: AHT10 no encontrado");
+  } else {
+    Serial.println("AHT10 inicializado correctamente");
+  }
+
+  Serial.println("Sistema listo.");
+}
+
+void loop() {
+
+  // =====================
+  // Lectura BME280
+  // =====================
+  float temp_bme = bme.readTemperature();
+  float hum_bme  = bme.readHumidity();
+  float pres_bme = bme.readPressure() / 100.0F; // hPa
+
+  // =====================
+  // Lectura BH1750
+  // =====================
+  float lux = lightMeter.readLightLevel();
+
+  // =====================
+  // Lectura AHT10
+  // =====================
+  sensors_event_t humidity, temp;
+  aht.getEvent(&humidity, &temp);
+
+  // =====================
+  // Lectura Potenciómetro
+  // =====================
+  int potValue = analogRead(POT_PIN);
+
+  // =====================
+  // Impresión de datos
+  // =====================
+  Serial.println("------ DATOS ------");
+
+  Serial.print("BME Temp: ");
+  Serial.print(temp_bme);
+  Serial.println(" °C");
+
+  Serial.print("BME Humedad: ");
+  Serial.print(hum_bme);
+  Serial.println(" %");
+
+  Serial.print("BME Presion: ");
+  Serial.print(pres_bme);
+  Serial.println(" hPa");
+
+  Serial.print("BH1750 Luz: ");
+  Serial.print(lux);
+  Serial.println(" lux");
+
+  Serial.print("AHT Temp: ");
+  Serial.print(temp.temperature);
+  Serial.println(" °C");
+
+  Serial.print("AHT Humedad: ");
+  Serial.print(humidity.relative_humidity);
+  Serial.println(" %");
+
+  Serial.print("Potenciometro: ");
+  Serial.println(potValue);
+
+  Serial.println("-------------------\n");
+
+  delay(2000);
+}
