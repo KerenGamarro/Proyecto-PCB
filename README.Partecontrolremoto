@@ -1,0 +1,35 @@
+# Control Remoto – CAIPO (ESP32)
+
+Prototipo funcional del módulo de control remoto del sistema CAIPO.
+
+## Funciones principales
+- Joystick (eje Y):
+  - Arriba → CERRAR (0°)
+  - Abajo → ABRIR (90°)
+- 2 Servomotores (0–90°)
+- LED verde = CERRADA
+- LED rojo = ABIERTA
+- 3 botones para selección de sensor (datos simulados)
+- LCD 16x2 (modo 4 bits)
+- Salida de depuración por Serial (115200)
+
+---
+
+## Librerías y dependencias
+
+- Framework: **Arduino (ESP32)**
+- Librería: `ESP32Servo`
+- Librería: `LiquidCrystal`
+- Plataforma: `espressif32`
+
+Ejemplo `platformio.ini`:
+
+```ini
+[env:esp32dev]
+platform = espressif32
+board = esp32dev
+framework = arduino
+monitor_speed = 115200
+
+lib_deps =
+  madhephaestus/ESP32Servo
