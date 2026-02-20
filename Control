@@ -1,0 +1,183 @@
+/*
+  Control Remoto - CAIPO
+  Abby Barrios - 23137
+*/
+
+#include <Arduino.h>
+#include <LiquidCrystal.h>
+#include <ESP32Servo.h>
+
+// =====================
+// Pines
+// =====================
+#define JOY_Y_PIN 39
+
+#define SERVO1_PIN 18
+#define SERVO2_PIN 19
+
+#define LED_OPEN_PIN   4   // rojo
+#define LED_CLOSED_PIN 5   // verde
+
+#define BTN1_PIN 16
+#define BTN2_PIN 17
+#define BTN3_PIN 23
+
+// LCD paralela
+#define LCD_RS 14
+#define LCD_E  27
+#define LCD_D4 26
+#define LCD_D5 25
+#define LCD_D6 33
+#define LCD_D7 32
+
+LiquidCrystal lcd(LCD_RS, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+
+Servo servo1;
+Servo servo2;
+
+const int ANG_CERRADO = 0;
+const int ANG_ABIERTO = 90;
+
+enum DoorState { CERRADA, ABIERTA };
+DoorState doorState = CERRADA;
+
+int selectedSensor = 1;
+
+// =====================
+// Datos simulados
+// =====================
+float temp = 24;
+float hum = 55;
+float lux = 200;
+
+void simulateData() {
+  float t = millis() / 1000.0;
+  temp = 24 + 2 * sin(t/5);
+  hum  = 55 + 5 * sin(t/6);
+  lux  = 200 + 50 * sin(t/4);
+}
+
+// =====================
+// LEDs
+// =====================
+void updateLEDs() {
+  if (doorState == CERRADA) {
+    digitalWrite(LED_CLOSED_PIN, HIGH);
+    digitalWrite(LED_OPEN_PIN, LOW);
+  } else {
+    digitalWrite(LED_CLOSED_PIN, LOW);
+    digitalWrite(LED_OPEN_PIN, HIGH);
+  }
+}
+
+// =====================
+// Joystick
+// =====================
+void handleJoystick() {
+  int rawY = analogRead(JOY_Y_PIN);
+
+  if (rawY > 3000) { // abajo = abrir
+    doorState = ABIERTA;
+    servo1.write(ANG_ABIERTO);
+    servo2.write(ANG_ABIERTO);
+  }
+  else if (rawY < 1000) { // arriba = cerrar
+    doorState = CERRADA;
+    servo1.write(ANG_CERRADO);
+    servo2.write(ANG_CERRADO);
+  }
+}
+
+// =====================
+// Botones
+// =====================
+void readButtons() {
+  if (digitalRead(BTN1_PIN) == LOW) {
+    selectedSensor = 1;
+    delay(200);
+  }
+  if (digitalRead(BTN2_PIN) == LOW) {
+    selectedSensor = 2;
+    delay(200);
+  }
+  if (digitalRead(BTN3_PIN) == LOW) {
+    selectedSensor = 3;
+    delay(200);
+  }
+}
+
+// =====================
+// LCD
+// =====================
+void updateLCD() {
+  lcd.clear();
+
+  lcd.setCursor(0,0);
+  if (doorState == CERRADA)
+    lcd.print("CERRADA ");
+  else
+    lcd.print("ABIERTA ");
+
+  if (selectedSensor == 1) lcd.print("BME");
+  if (selectedSensor == 2) lcd.print("BH ");
+  if (selectedSensor == 3) lcd.print("AHT");
+
+  lcd.setCursor(0,1);
+
+  if (selectedSensor == 1) {
+    lcd.print("T:");
+    lcd.print(temp,1);
+    lcd.print(" H:");
+    lcd.print(hum,0);
+  }
+  else if (selectedSensor == 2) {
+    lcd.print("Lux:");
+    lcd.print(lux,0);
+  }
+  else {
+    lcd.print("Sim AHT");
+  }
+}
+
+// =====================
+// SETUP
+// =====================
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(LED_OPEN_PIN, OUTPUT);
+  pinMode(LED_CLOSED_PIN, OUTPUT);
+
+  pinMode(BTN1_PIN, INPUT_PULLUP);
+  pinMode(BTN2_PIN, INPUT_PULLUP);
+  pinMode(BTN3_PIN, INPUT_PULLUP);
+
+  lcd.begin(16,2);
+  lcd.print("Control CAIPO");
+
+  servo1.attach(SERVO1_PIN);
+  servo2.attach(SERVO2_PIN);
+
+  servo1.write(ANG_CERRADO);
+  servo2.write(ANG_CERRADO);
+
+  updateLEDs();
+
+  delay(1500);
+  lcd.clear();
+}
+
+// =====================
+// LOOP
+// =====================
+void loop() {
+
+  handleJoystick();
+  readButtons();
+  simulateData();
+  updateLEDs();
+  updateLCD();
+
+  delay(200);
+}
