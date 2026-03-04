@@ -1,0 +1,89 @@
+#include <Wire.h>
+#include <Adafruit_BME280.h>
+#include <BH1750.h>
+
+#define SDA_PIN 18
+#define SCL_PIN 19
+#define POT_PIN 14
+
+Adafruit_BME280 bme;
+BH1750 lightMeter;
+
+bool bmeOK = false;
+bool bhOK = false;
+
+void setup() {
+  Serial.begin(115200);
+  delay(2000);
+
+  Serial.println("Iniciando sistema...");
+
+  Wire.begin(SDA_PIN, SCL_PIN);
+  analogReadResolution(12);
+
+  // ========= BME280 =========
+  if (bme.begin(0x76)) {
+    Serial.println("BME280 detectado en 0x76");
+    bmeOK = true;
+  }
+  else if (bme.begin(0x77)) {
+    Serial.println("BME280 detectado en 0x77");
+    bmeOK = true;
+  }
+  else {
+    Serial.println("ERROR: BME280 no detectado");
+  }
+
+  // ========= BH1750 =========
+  if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
+    Serial.println("BH1750 OK");
+    bhOK = true;
+  } else {
+    Serial.println("BH1750 NO detectado");
+  }
+
+  Serial.println("Sistema listo.\n");
+}
+
+void loop() {
+
+  Serial.println("------ DATOS ------");
+
+  // ===== BME280 =====
+  if (bmeOK) {
+    Serial.print("Temperatura: ");
+    Serial.print(bme.readTemperature());
+    Serial.println(" °C");
+
+    Serial.print("Humedad: ");
+    Serial.print(bme.readHumidity());
+    Serial.println(" %");
+
+    Serial.print("Presion: ");
+    Serial.print(bme.readPressure() / 100.0F);
+    Serial.println(" hPa");
+  } else {
+    Serial.println("BME280 no disponible");
+  }
+
+  // ===== BH1750 =====
+  if (bhOK) {
+    float lux = lightMeter.readLightLevel();
+    Serial.print("Luz: ");
+    Serial.print(lux);
+    Serial.println(" lux");
+  }
+
+  // ===== Potenciometro =====
+  int potValue = analogRead(POT_PIN);
+  float potPercent = (potValue / 4095.0) * 100.0;
+
+  Serial.print("Pot ADC: ");
+  Serial.print(potValue);
+  Serial.print(" | %: ");
+  Serial.println(potPercent);
+
+  Serial.println("-------------------\n");
+
+  delay(2000);
+}
